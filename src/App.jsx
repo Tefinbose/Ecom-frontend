@@ -6,16 +6,14 @@ import {
   Routes,
 } from "react-router-dom";
 
-import "./index.css";
-
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Dashboard from "./pages/dashboard/Dashboard";
 
 function ProtectedRoute({ children }) {
   const token =
-    localStorage.getItem("token") ||
-    sessionStorage.getItem("token");
+    localStorage.getItem("adminToken") ||
+    sessionStorage.getItem("adminToken");
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -30,7 +28,7 @@ export default function App() {
       <Routes>
         <Route
           path="/"
-          element={<Navigate to="/login" replace />}
+          element={<Navigate to="/dashboard" replace />}
         />
 
         <Route
@@ -54,7 +52,7 @@ export default function App() {
 
         <Route
           path="*"
-          element={<Navigate to="/login" replace />}
+          element={<Navigate to="/dashboard" replace />}
         />
       </Routes>
     </BrowserRouter>

@@ -46,7 +46,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/admin/auth/login`, {
+      const response = await fetch(`${API_URL}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -54,6 +54,8 @@ export default function Login() {
       });
 
       const data = await response.json();
+      console.log(data);
+      
 
       if (!response.ok) {
         throw new Error(data.message || "Unable to sign in.");
@@ -66,8 +68,8 @@ export default function Login() {
         const storage = remember ? localStorage : sessionStorage;
         storage.setItem("adminToken", data.token);
       }
-
-      navigate("/dashboard", { replace: true });
+    console.log("Login successfully completed")
+      navigate("/dashboard/*", { replace: true });
     } catch (error) {
       setServerError(
         error.message || "Unable to connect to the server."

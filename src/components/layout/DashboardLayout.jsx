@@ -7,6 +7,16 @@ export default function DashboardLayout({ children }) {
   const [active, setActive] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("adminData");
+
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("adminData");
+
+  navigate("/login", { replace: true });
+};
+
   return (
     <div className="app-shell">
       <Sidebar
