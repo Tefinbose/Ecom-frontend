@@ -1,23 +1,23 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes("localhost:3000")
-    ? import.meta.env.VITE_API_URL
-    : "/api";
+// Base server URL fetched from frontend .env
+export const SERVER_URL =
+  import.meta.env.VITE_SERVER_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:3000";
 
-export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+// Standardized API root and backend origin
+export const API_BASE_URL = SERVER_URL.endsWith("/api")
+  ? SERVER_URL
+  : `${SERVER_URL}/api`;
+
+export const BACKEND_URL = SERVER_URL.replace(/\/api$/, "");
 
 /**
- * Normalizes backend image paths and filenames to full URLs.
- * Handles:
- * - full URLs (http/https/blob/data)
- * - /uploads/filename.ext
- * - uploads/filename.ext
- * - raw filenames (e.g. image-12345.png)
+ * Normalizes backend image paths to full URLs
  */
 export function getImageUrl(path) {
   if (!path) return "";
-  const raw = typeof path === "object" ? (path.url || path.src || "") : path;
-  if (!raw || typeof raw !== "string" || !raw.trim()) return "";
+  const raw = typeof path === "object" ? path.url || path.src || "" : path;
+  if (!raw || typeof raw !== "string") return "";
   const str = raw.trim();
 
   if (
@@ -28,61 +28,45 @@ export function getImageUrl(path) {
   ) {
     return str;
   }
-  if (str.startsWith("/uploads/")) {
-    return encodeURI(`${BACKEND_URL}${str}`);
-  }
-  if (str.startsWith("uploads/")) {
-    return encodeURI(`${BACKEND_URL}/${str}`);
-  }
-  return encodeURI(`${BACKEND_URL}/uploads/${str}`);
+  return encodeURI(`${BACKEND_URL}/uploads/${str.replace(/^\/?(uploads\/)?/, "")}`);
 }
 
 /**
- * Universal API request wrapper with auth header, FormData detection, and JSON error parsing.
+ * Universal API request wrapper: handles tokens, JSON/FormData, and clean error messages
  */
 export async function apiRequest(endpoint, options = {}) {
   const token =
     localStorage.getItem("adminToken") ||
     sessionStorage.getItem("adminToken");
 
-  const headers = { ...options.headers };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
   const isFormData = options.body instanceof FormData;
 
-  // Only set application/json when body is NOT FormData
-  if (!isFormData && !headers["Content-Type"]) {
-    headers["Content-Type"] = "application/json";
-  }
+  const headers = {
+    ...(!isFormData && { "Content-Type": "application/json" }),
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...options.headers,
+  };
 
-  let body = options.body;
-  if (!isFormData && body && typeof body === "object") {
-    body = JSON.stringify(body);
-  }
+  const body =
+    !isFormData && options.body && typeof options.body === "object"
+      ? JSON.stringify(options.body)
+      : options.body;
 
-  const normalizedEndpoint = endpoint.startsWith("/")
+  const cleanEndpoint = endpoint.startsWith("http")
     ? endpoint
-    : `/${endpoint}`;
-  const url = endpoint.startsWith("http")
-    ? endpoint
-    : `${API_BASE_URL}${normalizedEndpoint}`;
+    : `${API_BASE_URL}/${endpoint.replace(/^\/?(api\/)?/, "")}`;
 
-  const response = await fetch(url, {
+  const response = await fetch(cleanEndpoint, {
     ...options,
     headers,
     body,
   });
 
   const contentType = response.headers.get("content-type");
-  let data;
-  if (contentType && contentType.includes("application/json")) {
-    data = await response.json().catch(() => null);
-  } else {
-    data = await response.text().catch(() => null);
-  }
+  const data =
+    contentType && contentType.includes("application/json")
+      ? await response.json().catch(() => null)
+      : await response.text().catch(() => null);
 
   if (!response.ok) {
     const errorMsg =

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, LoaderCircle, Shield } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import PasswordInput from "../../components/auth/PasswordInput";
+import { apiRequest } from "../../services/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -43,18 +44,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/admin/login", {
+      const data = await apiRequest("/admin/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           email: form.email.trim().toLowerCase(),
           password: form.password,
-        }),
+        },
       });
 
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data?.token) {
+      if (!data?.token) {
         throw new Error(data?.message || "Invalid admin credentials. Please verify your email and password.");
       }
 
