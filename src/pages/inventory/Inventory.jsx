@@ -88,21 +88,42 @@ export default function Inventory() {
   // Add new inventory record handler
   const handleAddInventory = async (e) => {
     e.preventDefault();
+    if (!newItem.productId) {
+      setFeedback({ type: "error", text: "Please select a product from the list." });
+      return;
+    }
     try {
+      const selectedProduct = products.find((p) => p._id === newItem.productId);
+      const defaultVariantId = selectedProduct?.variants?.[0]?._id;
+
       const payload = {
-        product: newItem.productId || (products[0]?._id ?? ""),
-        sku: newItem.sku || `SKU-${Math.floor(100 + Math.random() * 900)}`,
-        locationName: newItem.locationName,
-        onHand: Number(newItem.onHand),
-        available: Number(newItem.onHand),
+        product: newItem.productId,
+        variantId: defaultVariantId || undefined,
+        locationName: newItem.locationName || "Main Warehouse",
+        onHand: Number(newItem.onHand) || 0,
+        committed: 0,
+        unavailable: 0,
+        incoming: 0,
       };
+
       const res = await addInventory(payload);
       const created = res?.inventory || payload;
       setItems((prev) => [created, ...prev]);
       setIsAdding(false);
-      setFeedback({ type: "success", text: "Inventory record added" });
+      setFeedback({ type: "success", text: "Inventory record added successfully" });
+      setNewItem({
+        productId: "",
+        sku: "",
+        locationName: "Main Warehouse",
+        onHand: 10,
+        available: 10,
+      });
     } catch (err) {
-      setFeedback({ type: "error", text: err.message || "Failed to add inventory" });
+      const errorMsg =
+        err.status === 409 || err.message?.includes("already exists")
+          ? "Stock already exists for this product at this location. Please click 'Adjust' in the table to change its quantity."
+          : err.message || "Failed to add inventory";
+      setFeedback({ type: "error", text: errorMsg });
     }
   };
 
@@ -337,14 +358,31 @@ export default function Inventory() {
               <button type="button" onClick={() => setIsAdding(false)}><X size={18} className="text-slate-400" /></button>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700">Select Product</label>
+              <label className="text-xs font-semibold text-slate-700">Select Product *</label>
               <select
-                className="mt-1 w-full rounded-xl border border-slate-200 p-2 text-xs outline-none"
+                required
+                className="mt-1 w-full rounded-xl border border-slate-200 p-2 text-xs outline-none focus:border-indigo-500"
                 value={newItem.productId}
-                onChange={(e) => setNewItem({ ...newItem, productId: e.target.value })}
+                onChange={(e) => {
+                  const selId = e.target.value;
+                  const selProd = products.find((p) => p._id === selId);
+                  const suggestedSku =
+                    selProd?.variants?.[0]?.sku ||
+                    (selProd?.title
+                      ? `${selProd.title.slice(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`
+                      : "");
+                  setNewItem({
+                    ...newItem,
+                    productId: selId,
+                    sku: suggestedSku || newItem.sku,
+                  });
+                }}
               >
+                <option value="">-- Choose a Product --</option>
                 {products.map((p) => (
-                  <option key={p._id} value={p._id}>{p.title}</option>
+                  <option key={p._id} value={p._id}>
+                    {p.title} {p.vendor ? `(${p.vendor})` : ""}
+                  </option>
                 ))}
               </select>
             </div>

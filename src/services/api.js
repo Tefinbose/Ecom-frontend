@@ -29,12 +29,12 @@ export function getImageUrl(path) {
     return str;
   }
   if (str.startsWith("/uploads/")) {
-    return `${BACKEND_URL}${str}`;
+    return encodeURI(`${BACKEND_URL}${str}`);
   }
   if (str.startsWith("uploads/")) {
-    return `${BACKEND_URL}/${str}`;
+    return encodeURI(`${BACKEND_URL}/${str}`);
   }
-  return `${BACKEND_URL}/uploads/${str}`;
+  return encodeURI(`${BACKEND_URL}/uploads/${str}`);
 }
 
 /**

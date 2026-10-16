@@ -12,24 +12,40 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { getProducts, deleteProduct } from "../../services/productService";
+import { getCollections } from "../../services/collectionService";
 import { getImageUrl } from "../../services/api";
 
 export default function AddProduct() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [deletingId, setDeletingId] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
-  // Load products list from API
+  // Helper to resolve human-readable category name
+  const getCategoryName = (cat) => {
+    if (!cat) return "General";
+    if (typeof cat === "object" && cat.title) return cat.title;
+    const catStr = String(cat);
+    const matched = collections.find((c) => c._id === catStr || c.title === catStr);
+    return matched ? matched.title : catStr;
+  };
+
+  // Load products list and collections from API
   const loadProducts = async () => {
     setLoading(true);
     try {
-      const res = await getProducts();
-      const list = res?.products || (Array.isArray(res) ? res : []);
+      const [prodRes, colRes] = await Promise.all([
+        getProducts(),
+        getCollections().catch(() => null),
+      ]);
+      const list = prodRes?.products || (Array.isArray(prodRes) ? prodRes : []);
+      const colList = colRes?.collections || (Array.isArray(colRes) ? colRes : []);
       setProducts(list);
+      setCollections(colList);
     } catch (err) {
       console.error("Failed to load products:", err);
     } finally {
@@ -58,16 +74,17 @@ export default function AddProduct() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return products.filter((p) => {
+      const catName = getCategoryName(p.category);
       const matchesSearch =
         (p.title && p.title.toLowerCase().includes(q)) ||
-        (p.category && String(p.category?.title || p.category).toLowerCase().includes(q));
+        (catName && catName.toLowerCase().includes(q));
 
       const matchesStatus =
         statusFilter === "all" || (p.status || "active").toLowerCase() === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
-  }, [products, search, statusFilter]);
+  }, [products, collections, search, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -194,7 +211,7 @@ export default function AddProduct() {
               </tr>
             ) : (
               filtered.map((p) => {
-                const img = getImageUrl(p.image || p.media?.[0]?.url);
+                const img = getImageUrl(p.image || p.media?.[p.media?.length - 1]?.url || p.media?.[0]?.url);
                 const price = Number(p.unitPrice?.amount || p.price || 0).toLocaleString("en-IN");
 
                 return (
@@ -202,11 +219,21 @@ export default function AddProduct() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {img ? (
-                          <img
-                            src={img}
-                            alt={p.title}
-                            className="h-10 w-10 rounded-lg object-cover border border-slate-200"
-                          />
+                          <>
+                            <img
+                              src={img}
+                              alt={p.title}
+                              className="h-10 w-10 rounded-lg object-cover border border-slate-200"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                const fallback = e.currentTarget.parentElement?.querySelector(".fallback-icon");
+                                if (fallback) fallback.classList.remove("hidden");
+                              }}
+                            />
+                            <div className="fallback-icon hidden flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                              <Package size={18} />
+                            </div>
+                          </>
                         ) : (
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
                             <Package size={18} />
@@ -220,7 +247,7 @@ export default function AddProduct() {
                     </td>
 
                     <td className="p-4 text-xs text-slate-600">
-                      {p.category?.title || p.category || "General"}
+                      {getCategoryName(p.category)}
                     </td>
 
                     <td className="p-4 font-bold text-slate-900">₹{price}</td>

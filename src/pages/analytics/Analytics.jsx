@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import { getOrders, getOrderStats } from "../../services/orderService";
 import { getProducts } from "../../services/productService";
+import { getCollections } from "../../services/collectionService";
 
 export default function Analytics() {
   const [period, setPeriod] = useState("7d");
@@ -28,15 +29,17 @@ export default function Analytics() {
   const [orders, setOrders] = useState([]);
   const [orderStats, setOrderStats] = useState(null);
   const [products, setProducts] = useState([]);
+  const [collections, setCollections] = useState([]);
 
   // Fetch live analytics metrics
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const [orderRes, statsRes, prodRes] = await Promise.allSettled([
+      const [orderRes, statsRes, prodRes, colRes] = await Promise.allSettled([
         getOrders(),
         getOrderStats(),
         getProducts(),
+        getCollections(),
       ]);
 
       if (orderRes.status === "fulfilled" && orderRes.value) {
@@ -47,6 +50,10 @@ export default function Analytics() {
       }
       if (prodRes.status === "fulfilled" && prodRes.value) {
         setProducts(prodRes.value.products || prodRes.value || []);
+      }
+      if (colRes.status === "fulfilled" && colRes.value) {
+        const list = colRes.value.collections || colRes.value || [];
+        setCollections(Array.isArray(list) ? list : []);
       }
     } catch (err) {
       console.error("Analytics fetch error:", err);
@@ -98,13 +105,16 @@ export default function Analytics() {
     // Category distribution
     const catMap = {};
     products.forEach((p) => {
-      const cat = p.category?.title || p.category || "General";
+      const matched = collections.find(
+        (c) => c._id === p.category || c.title === p.category
+      );
+      const cat = matched ? matched.title : (p.category?.title || p.category || "General");
       catMap[cat] = (catMap[cat] || 0) + Number(p.unitPrice?.amount || p.price || 100);
     });
     const categories = Object.entries(catMap).map(([category, sales]) => ({ category, sales }));
 
     return { totalRev, totalCount, aov, fulfillmentRate, trend, categories };
-  }, [orders, products, period]);
+  }, [orders, products, collections, period]);
 
   // Order status pipeline breakdown
   const statusItems = [

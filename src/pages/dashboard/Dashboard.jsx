@@ -23,6 +23,7 @@ import {
   Tooltip,
 } from "recharts";
 import { getProducts } from "../../services/productService";
+import { getCollections } from "../../services/collectionService";
 import { getOrders, getOrderStats } from "../../services/orderService";
 import { getCustomers } from "../../services/customerService";
 
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [orderStats, setOrderStats] = useState(null);
 
@@ -37,11 +39,12 @@ export default function Dashboard() {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const [orderRes, prodRes, custRes, statsRes] = await Promise.allSettled([
+      const [orderRes, prodRes, custRes, statsRes, colRes] = await Promise.allSettled([
         getOrders(),
         getProducts(),
         getCustomers(),
         getOrderStats(),
+        getCollections(),
       ]);
 
       if (orderRes.status === "fulfilled" && orderRes.value) {
@@ -51,6 +54,10 @@ export default function Dashboard() {
       if (prodRes.status === "fulfilled" && prodRes.value) {
         const list = prodRes.value.products || prodRes.value || [];
         setProducts(Array.isArray(list) ? list : []);
+      }
+      if (colRes.status === "fulfilled" && colRes.value) {
+        const list = colRes.value.collections || colRes.value || [];
+        setCollections(Array.isArray(list) ? list : []);
       }
       if (custRes.status === "fulfilled" && custRes.value) {
         const list = custRes.value.users || custRes.value || [];
@@ -322,7 +329,12 @@ export default function Dashboard() {
                   <tr key={prod._id} className="hover:bg-slate-50/50">
                     <td className="py-3 font-semibold text-slate-900">{prod.title}</td>
                     <td className="py-3 text-xs text-slate-500">
-                      {prod.category?.title || prod.category || "General"}
+                      {(() => {
+                        const matched = collections.find(
+                          (c) => c._id === prod.category || c.title === prod.category
+                        );
+                        return matched ? matched.title : (prod.category?.title || prod.category || "General");
+                      })()}
                     </td>
                     <td className="py-3 font-bold text-slate-900 text-xs">
                       ₹{Number(prod.unitPrice?.amount || prod.price || 0).toLocaleString("en-IN")}

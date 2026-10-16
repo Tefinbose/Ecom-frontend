@@ -45,12 +45,16 @@ export default function ProductForm() {
             setTitle(p.title || "");
             setDescription(p.description || "");
             setStatus(p.status || "active");
-            setCategory(p.category?._id || p.category || "");
+            const foundCol = colList.find(
+              (c) => c._id === (p.category?._id || p.category) || c.title === p.category
+            );
+            setCategory(foundCol ? foundCol.title : (p.category?.title || p.category || ""));
             setPrice(p.unitPrice?.amount || p.price || "");
             setVendor(p.vendor || "");
             setStock(p.variants?.[0]?.inventoryQuantity ?? 10);
-            if (p.image || p.media?.[0]?.url) {
-              setPreviewUrl(getImageUrl(p.image || p.media?.[0]?.url));
+            const rawImg = p.image || p.media?.[p.media?.length - 1]?.url || p.media?.[0]?.url;
+            if (rawImg) {
+              setPreviewUrl(getImageUrl(rawImg));
             }
           }
         }
@@ -85,11 +89,16 @@ export default function ProductForm() {
     setError("");
 
     try {
+      const selectedCol = collections.find(
+        (c) => c.title === category || c._id === category
+      );
+
       const payload = {
         title: title.trim(),
         description: description.trim(),
         status,
-        category: category || undefined,
+        category: selectedCol ? selectedCol.title : (category || undefined),
+        Collection: selectedCol ? [selectedCol._id] : undefined,
         vendor: vendor.trim(),
         unitPrice: { amount: Number(price) || 0 },
         variants: [
@@ -252,7 +261,7 @@ export default function ProductForm() {
               >
                 <option value="">Select a collection...</option>
                 {collections.map((c) => (
-                  <option key={c._id} value={c._id}>
+                  <option key={c._id} value={c.title}>
                     {c.title}
                   </option>
                 ))}
@@ -280,6 +289,9 @@ export default function ProductForm() {
                   src={previewUrl}
                   alt="Product preview"
                   className="h-44 w-full object-cover"
+                  onError={() => {
+                    setPreviewUrl("");
+                  }}
                 />
                 <button
                   type="button"
