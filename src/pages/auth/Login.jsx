@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, LoaderCircle, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, LoaderCircle, Shield } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import PasswordInput from "../../components/auth/PasswordInput";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ email: "admin@shopify.com", password: "admin@123" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,14 +55,14 @@ export default function Login() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data?.token) {
-        throw new Error(data?.message || "Invalid credentials. Please verify your email and password.");
+        throw new Error(data?.message || "Invalid admin credentials. Please verify your email and password.");
       }
 
       const storage = remember ? localStorage : sessionStorage;
       storage.setItem("adminToken", data.token);
       storage.setItem(
         "adminUser",
-        JSON.stringify(data.adminData || { email: form.email, name: "Store Administrator" })
+        JSON.stringify(data.adminData || { email: form.email, role: "admin" })
       );
 
       navigate("/admin/dashboard", { replace: true });
@@ -73,24 +73,11 @@ export default function Login() {
     }
   }
 
-  function fillDemo() {
-    setForm({ email: "admin@shopify.com", password: "admin@123" });
-    setErrors({});
-    setServerError("");
-  }
-
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Enter your admin credentials to access your store workspace."
-      footer={
-        <p>
-          Don't have an admin account?{" "}
-          <Link to="/admin/register" className="auth-link">
-            Create account
-          </Link>
-        </p>
-      }
+      title="Admin Portal"
+      subtitle="Enter your administrator credentials to access the store management dashboard."
+      footer={null}
     >
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {serverError && (
@@ -100,7 +87,7 @@ export default function Login() {
         )}
 
         <div className="form-field">
-          <label htmlFor="email">Email address</label>
+          <label htmlFor="email">Admin Email</label>
           <input
             id="email"
             name="email"
@@ -134,16 +121,8 @@ export default function Login() {
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
             />
-            <span>Remember me</span>
+            <span>Remember this device</span>
           </label>
-
-          <button
-            type="button"
-            onClick={fillDemo}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
-          >
-            <Sparkles size={13} /> Fill demo login
-          </button>
         </div>
 
         <button
@@ -154,18 +133,19 @@ export default function Login() {
           {loading ? (
             <>
               <LoaderCircle className="spin" size={18} />
-              Signing in...
+              Authenticating...
             </>
           ) : (
             <>
-              Sign in to dashboard
+              Sign in to admin dashboard
               <ArrowRight size={18} />
             </>
           )}
         </button>
 
-        <p className="auth-security-note">
-          Your account is secured with local administrator session protection.
+        <p className="auth-security-note flex items-center justify-center gap-1.5 text-xs text-slate-500">
+          <Shield size={13} className="text-indigo-600" />
+          Restricted access. Authorized store administrators only.
         </p>
       </form>
     </AuthLayout>

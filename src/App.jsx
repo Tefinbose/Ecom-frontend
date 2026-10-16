@@ -32,7 +32,7 @@ export default function App() {
       <Routes>
         {/* Authentication */}
         <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin/register" element={<Register />} />
+        <Route path="/admin/register" element={<Navigate to="/admin/login" replace />} />
 
         {/* Protected Admin Dashboard */}
         <Route path="/admin" element={<ProtectedAdmin />}>
