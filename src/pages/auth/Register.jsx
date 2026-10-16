@@ -1,11 +1,8 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import PasswordInput from "../../components/auth/PasswordInput";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -42,11 +39,6 @@ export default function Register() {
       next.password = "Password must contain at least 8 characters.";
     }
 
-    if (!/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) ||
-        !/[0-9]/.test(form.password)) {
-      next.password = "Use uppercase, lowercase, and numeric characters.";
-    }
-
     if (form.password !== form.confirmPassword) {
       next.confirmPassword = "Passwords do not match.";
     }
@@ -55,7 +47,7 @@ export default function Register() {
     return Object.keys(next).length === 0;
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
     setServerError("");
 
@@ -63,32 +55,15 @@ export default function Register() {
 
     setLoading(true);
 
-    try {
-      const response = await fetch(`${API_URL}/admin/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim(),
-          password: form.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to create account.");
-      }
-
-      navigate("/login", { replace: true });
-    } catch (error) {
-      setServerError(
-        error.message || "Unable to connect to the server."
+    setTimeout(() => {
+      localStorage.setItem("adminToken", "demo-token-" + Date.now());
+      localStorage.setItem(
+        "adminUser",
+        JSON.stringify({ email: form.email, name: form.name })
       );
-    } finally {
       setLoading(false);
-    }
+      navigate("/admin/dashboard", { replace: true });
+    }, 400);
   }
 
   return (
@@ -98,7 +73,7 @@ export default function Register() {
       footer={
         <p>
           Already have an account?{" "}
-          <Link to="/login" className="auth-link">
+          <Link to="/admin/login" className="auth-link">
             Sign in
           </Link>
         </p>
@@ -117,7 +92,7 @@ export default function Register() {
             id="name"
             name="name"
             type="text"
-            placeholder="Enter your full name"
+            placeholder="e.g. John Doe"
             autoComplete="name"
             value={form.name}
             onChange={updateField}
@@ -135,7 +110,7 @@ export default function Register() {
             id="email"
             name="email"
             type="email"
-            placeholder="admin@yourstore.com"
+            placeholder="admin@empirestore.com"
             autoComplete="email"
             value={form.email}
             onChange={updateField}
@@ -172,7 +147,7 @@ export default function Register() {
         />
 
         <p className="password-hint">
-          Use at least 8 characters with uppercase, lowercase, and a number.
+          Use at least 8 characters for account security.
         </p>
 
         <button
@@ -194,7 +169,7 @@ export default function Register() {
         </button>
 
         <p className="auth-security-note">
-          Admin access must be authorized by your store administrator.
+          Local admin credentials will be registered to this session.
         </p>
       </form>
     </AuthLayout>

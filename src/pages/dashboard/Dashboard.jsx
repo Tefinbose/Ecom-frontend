@@ -1,11 +1,7 @@
-
-import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
-  LayoutDashboard, Package, Layers, ShoppingCart, Users, Boxes, Tag,
-  FileText, BarChart3, Settings, Search, Bell, Menu, X, ChevronDown,
-  ArrowUpRight, ArrowDownRight, CircleDollarSign, Plus, MoreHorizontal,
-  Download, Clock, CheckCircle2, Truck, LogOut
+  Package, ShoppingCart, Users, CircleDollarSign, Plus, MoreHorizontal,
+  Download, Clock, CheckCircle2, Truck, ArrowUpRight
 } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
@@ -13,45 +9,28 @@ import {
 } from "recharts";
 import "./Dashboard.css";
 
-const navigation = [
-  ["Dashboard", LayoutDashboard],
-  ["Products", Package],
-  ["Categories", Layers],
-  ["Orders", ShoppingCart],
-  ["Customers", Users],
-  ["Inventory", Boxes],
-  ["Discounts", Tag],
-  ["Content", FileText],
-  ["Analytics", BarChart3],
-  ["Settings", Settings],
-];
-
-const routeMap = Object.fromEntries(
-  navigation.map(([name]) => [
-    name,
-    name === "Dashboard" ? "/dashboard" : `/dashboard/${name.toLowerCase()}`
-  ])
-);
-
 const salesData = [
-  { day: "Mon", sales: 3200 }, { day: "Tue", sales: 4100 },
-  { day: "Wed", sales: 3600 }, { day: "Thu", sales: 5200 },
-  { day: "Fri", sales: 4700 }, { day: "Sat", sales: 6500 },
+  { day: "Mon", sales: 3200 },
+  { day: "Tue", sales: 4100 },
+  { day: "Wed", sales: 3600 },
+  { day: "Thu", sales: 5200 },
+  { day: "Fri", sales: 4700 },
+  { day: "Sat", sales: 6500 },
   { day: "Sun", sales: 7200 },
 ];
 
 const orders = [
-  ["#ORD-1042", "Sarah Wilson", "$129.00", "Processing"],
-  ["#ORD-1041", "Mike Johnson", "$89.00", "Shipped"],
-  ["#ORD-1040", "Emily Davis", "$245.00", "Delivered"],
-  ["#ORD-1039", "Chris Brown", "$67.00", "Pending"],
+  ["#ORD-1042", "Sarah Wilson", "₹9,850.00", "Processing"],
+  ["#ORD-1041", "Mike Johnson", "₹6,800.00", "Shipped"],
+  ["#ORD-1040", "Emily Davis", "₹18,500.00", "Delivered"],
+  ["#ORD-1039", "Chris Brown", "₹5,100.00", "Pending"],
 ];
 
-const products = [
-  ["Classic White Tee", "Clothing", "$29.99", 120, "white"],
-  ["Denim Jacket", "Clothing", "$89.99", 45, "blue"],
-  ["Running Shoes", "Footwear", "$79.99", 12, "gray"],
-  ["Everyday Backpack", "Accessories", "$49.99", 8, "sand"],
+const topProducts = [
+  ["Classic White Tee", "Clothing", "₹2,499.00", 120, "white"],
+  ["Denim Jacket", "Clothing", "₹7,499.00", 45, "blue"],
+  ["Running Shoes", "Footwear", "₹6,599.00", 12, "gray"],
+  ["Everyday Backpack", "Accessories", "₹4,199.00", 8, "sand"],
 ];
 
 function Status({ value }) {
@@ -62,90 +41,12 @@ function Status({ value }) {
   );
 }
 
-function Sidebar({ active, open, close, logout }) {
-  const navigate = useNavigate();
-
-  return (
-    <>
-      {open && <button className="sidebar-overlay" onClick={close} aria-label="Close menu" />}
-      <aside className={`sidebar ${open ? "sidebar-open" : ""}`}>
-        <div className="brand">
-          <div className="brand-icon"><Package size={23} /></div>
-          <span>Store<span className="brand-accent">Admin</span></span>
-          <button className="icon-button sidebar-close" onClick={close} aria-label="Close navigation">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="store-label">STORE MANAGEMENT</div>
-        <nav className="navigation">
-          {navigation.map(([label, Icon]) => (
-            <button
-              key={label}
-              className={`nav-link ${active === label ? "nav-active" : ""}`}
-              onClick={() => { navigate(routeMap[label]); close(); }}
-            >
-              <Icon size={18} />
-              <span>{label}</span>
-              {label === "Orders" && <span className="nav-count">5</span>}
-            </button>
-          ))}
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="help-card">
-            <div className="help-icon">?</div>
-            <div><strong>Need help?</strong><p>Visit our help center</p></div>
-          </div>
-
-          <div className="admin-profile">
-            <div className="avatar">A</div>
-            <div className="admin-details">
-              <strong>Admin User</strong><span>Store Administrator</span>
-            </div>
-            <ChevronDown size={16} />
-          </div>
-
-          <button className="logout-button" onClick={logout}>
-            <LogOut size={17} /> Logout
-          </button>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-function Header({ active, onMenu }) {
-  return (
-    <header className="topbar">
-      <div className="topbar-left">
-        <button className="icon-button menu-button" onClick={onMenu} aria-label="Open menu">
-          <Menu size={22} />
-        </button>
-        <div className="breadcrumb">Store / <strong>{active}</strong></div>
-      </div>
-      <div className="topbar-actions">
-        <label className="global-search">
-          <Search size={17} />
-          <input placeholder="Search anything..." aria-label="Search" />
-        </label>
-        <button className="icon-button notification-button" aria-label="Notifications">
-          <Bell size={19} /><span />
-        </button>
-        <div className="topbar-avatar">A</div>
-        <div className="topbar-user"><strong>Admin User</strong><span>Administrator</span></div>
-        <ChevronDown size={15} className="user-chevron" />
-      </div>
-    </header>
-  );
-}
-
 function StatCard({ title, value, change, icon: Icon, tone }) {
   return (
     <article className="stat-card">
       <div className="stat-top">
         <div className={`stat-icon ${tone}`}><Icon size={21} /></div>
-        <MoreHorizontal size={20} />
+        <MoreHorizontal size={20} className="text-slate-400" />
       </div>
       <p className="stat-title">{title}</p>
       <h2>{value}</h2>
@@ -158,19 +59,19 @@ function StatCard({ title, value, change, icon: Icon, tone }) {
 
 function SalesChart() {
   return (
-    <div className="chart-wrap">
+    <div className="chart-wrap" style={{ width: "100%", height: 260 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={salesData} margin={{ top: 10, right: 6, left: -18, bottom: 0 }}>
+        <AreaChart data={salesData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#635bff" stopOpacity={0.2} />
-              <stop offset="100%" stopColor="#635bff" stopOpacity={0} />
+              <stop offset="0%" stopColor="#635bff" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="#635bff" stopOpacity={0.01} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#edf0f5" strokeDasharray="4 4" vertical={false} />
+          <CartesianGrid stroke="#edf0f5" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#929bad", fontSize: 12 }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#929bad", fontSize: 11 }} tickFormatter={v => `$${v / 1000}k`} />
-          <Tooltip formatter={v => [`$${Number(v).toLocaleString()}`, "Sales"]} />
+          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#929bad", fontSize: 11 }} tickFormatter={(v) => `₹${v / 1000}k`} />
+          <Tooltip formatter={(v) => [`₹${Number(v).toLocaleString()}`, "Sales"]} />
           <Area type="monotone" dataKey="sales" stroke="#635bff" strokeWidth={2.5} fill="url(#salesFill)" />
         </AreaChart>
       </ResponsiveContainer>
@@ -178,62 +79,84 @@ function SalesChart() {
   );
 }
 
-function DashboardHome() {
+export default function Dashboard() {
   const stats = [
-    ["Total Revenue", "$24,580", "12.8%", CircleDollarSign, "blue"],
-    ["Total Orders", "1,248", "8.2%", ShoppingCart, "purple"],
-    ["Total Customers", "8,549", "14.5%", Users, "green"],
-    ["Total Products", "186", "2.4%", Package, "orange"],
+    ["Total Revenue", "₹1,84,580", "+12.8%", CircleDollarSign, "blue"],
+    ["Total Orders", "1,248", "+8.2%", ShoppingCart, "purple"],
+    ["Total Customers", "8,549", "+14.5%", Users, "green"],
+    ["Active Products", "186", "+2.4%", Package, "orange"],
   ];
 
   return (
-    <>
-      <div className="page-heading">
+    <div className="space-y-6">
+      <div className="page-heading flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="eyebrow">OVERVIEW</div>
-          <h1>Dashboard</h1>
-          <p>Here's what's happening with your store today.</p>
+          <div className="eyebrow text-xs font-bold tracking-wider text-indigo-600 uppercase">OVERVIEW</div>
+          <h1 className="text-2xl font-bold text-slate-900">Store Dashboard</h1>
+          <p className="text-sm text-slate-500">Here is what is happening across your store today.</p>
         </div>
-        <div className="heading-actions">
-          <button className="button button-secondary" onClick={() => window.print()}>
+        <div className="heading-actions flex items-center gap-3">
+          <button
+            type="button"
+            className="button button-secondary flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+            onClick={() => window.print()}
+          >
             <Download size={16} /> Export
           </button>
-          <button className="button button-primary" onClick={() => window.location.href = "/dashboard/products"}>
-            <Plus size={17} /> Add product
-          </button>
+          <Link
+            to="/admin/products/new"
+            className="button button-primary flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <Plus size={17} /> Add Product
+          </Link>
         </div>
       </div>
 
       <section className="stats-grid">
-        {stats.map(([title, value, change, icon, tone]) =>
+        {stats.map(([title, value, change, icon, tone]) => (
           <StatCard key={title} {...{ title, value, change, tone }} icon={icon} />
-        )}
+        ))}
       </section>
 
       <section className="main-grid">
         <article className="panel sales-panel">
           <div className="panel-heading">
-            <div><h3>Sales overview</h3><p>Track your store performance</p></div>
+            <div>
+              <h3>Sales Overview</h3>
+              <p>Revenue trends for the selected period</p>
+            </div>
             <select className="period-select" defaultValue="7" aria-label="Sales period">
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
               <option value="90">Last 90 days</option>
             </select>
           </div>
-          <div className="sales-total">$24,580.00 <span>+12.8%</span></div>
+          <div className="sales-total">₹1,84,580.00 <span>+12.8%</span></div>
           <SalesChart />
         </article>
 
         <article className="panel orders-panel">
           <div className="panel-heading">
-            <div><h3>Recent orders</h3><p>Latest customer purchases</p></div>
+            <div>
+              <h3>Recent Orders</h3>
+              <p>Latest customer transactions</p>
+            </div>
+            <Link to="/admin/orders" className="text-xs font-semibold text-indigo-600 hover:underline">
+              View all
+            </Link>
           </div>
           <div className="order-list">
             {orders.map(([id, customer, amount, status]) => (
               <div className="order-item" key={id}>
                 <div className="order-icon"><ShoppingCart size={17} /></div>
-                <div className="order-info"><strong>{id}</strong><span>{customer}</span></div>
-                <div className="order-right"><strong>{amount}</strong><Status value={status} /></div>
+                <div className="order-info">
+                  <strong>{id}</strong>
+                  <span>{customer}</span>
+                </div>
+                <div className="order-right">
+                  <strong>{amount}</strong>
+                  <Status value={status} />
+                </div>
               </div>
             ))}
           </div>
@@ -242,23 +165,38 @@ function DashboardHome() {
 
       <section className="panel product-panel">
         <div className="panel-heading">
-          <div><h3>Top selling products</h3><p>Products performing best in your store</p></div>
+          <div>
+            <h3>Top Performing Products</h3>
+            <p>Products with highest sales velocity this month</p>
+          </div>
+          <Link to="/admin/products" className="text-xs font-semibold text-indigo-600 hover:underline">
+            Manage catalogue
+          </Link>
         </div>
         <div className="table-scroll">
           <table>
-            <thead><tr>
-              <th>PRODUCT</th><th>CATEGORY</th><th>PRICE</th><th>STOCK</th><th>STATUS</th><th />
-            </tr></thead>
+            <thead>
+              <tr>
+                <th>PRODUCT</th>
+                <th>CATEGORY</th>
+                <th>PRICE</th>
+                <th>STOCK</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
             <tbody>
-              {products.map(([name, category, price, stock, color]) => (
+              {topProducts.map(([name, category, price, stock, color]) => (
                 <tr key={name}>
-                  <td><div className="product-name">
-                    <div className={`product-placeholder product-${color}`}><Package size={19} /></div>
-                    <strong>{name}</strong>
-                  </div></td>
-                  <td>{category}</td><td className="table-price">{price}</td><td>{stock} units</td>
+                  <td>
+                    <div className="product-name">
+                      <div className={`product-placeholder product-${color}`}><Package size={18} /></div>
+                      <strong>{name}</strong>
+                    </div>
+                  </td>
+                  <td>{category}</td>
+                  <td className="table-price">{price}</td>
+                  <td>{stock} units</td>
                   <td><Status value={stock <= 10 ? "Low stock" : "Active"} /></td>
-                  <td><button className="icon-button" aria-label={`Options for ${name}`}><MoreHorizontal size={18} /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -268,66 +206,20 @@ function DashboardHome() {
 
       <section className="bottom-grid">
         {[
-          [CheckCircle2, "Fulfilled orders", "856", "68.5% of all orders", "green"],
-          [Clock, "Pending orders", "24", "Needs your attention", "orange"],
-          [Truck, "Orders in transit", "128", "Currently shipping", "blue"],
+          [CheckCircle2, "Fulfilled orders", "856", "68.5% of total orders", "green"],
+          [Clock, "Pending dispatch", "24", "Requires warehouse packaging", "orange"],
+          [Truck, "In transit", "128", "Dispatched to carrier partners", "blue"],
         ].map(([Icon, label, value, note, tone]) => (
           <article className="panel mini-panel" key={label}>
             <div className={`mini-icon ${tone}`}><Icon size={21} /></div>
-            <div><span>{label}</span><strong>{value}</strong><p>{note}</p></div>
+            <div>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <p>{note}</p>
+            </div>
           </article>
         ))}
       </section>
-
-      <footer className="footer">
-        <span>© 2026 StoreAdmin</span><span>Built for better store management</span>
-      </footer>
-    </>
-  );
-}
-
-function PlaceholderPage({ active }) {
-  const Icon = navigation.find(([name]) => name === active)?.[1] || Package;
-  return (
-    <div className="empty-state panel">
-      <div className="empty-icon"><Icon size={30} /></div>
-      <h2>{active}</h2>
-      <p>This module is ready for development. Connect its components and API endpoints here.</p>
-      <button className="button button-primary" onClick={() => alert(`Build the ${active} module next.`)}>
-        <Plus size={16} /> Get started
-      </button>
-    </div>
-  );
-}
-
-export default function DashboardLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const active = navigation.find(([name]) =>
-    name === "Dashboard"
-      ? location.pathname === "/dashboard"
-      : location.pathname.startsWith(routeMap[name])
-  )?.[0] || "Dashboard";
-
-  function logout() {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    localStorage.removeItem("adminData");
-    sessionStorage.removeItem("adminData");
-    navigate("/login", { replace: true });
-  }
-
-  return (
-    <div className="app-shell">
-      <Sidebar active={active} open={sidebarOpen} close={() => setSidebarOpen(false)} logout={logout} />
-      <div className="workspace">
-        <Header active={active} onMenu={() => setSidebarOpen(true)} />
-        <main className="main-content">
-          {active === "Dashboard" ? <DashboardHome /> : <PlaceholderPage active={active} />}
-        </main>
-      </div>
     </div>
   );
 }

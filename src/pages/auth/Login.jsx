@@ -1,20 +1,17 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { ArrowRight, LoaderCircle, Sparkles } from "lucide-react";
 import AuthLayout from "../../components/auth/AuthLayout";
 import PasswordInput from "../../components/auth/PasswordInput";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "admin@empirestore.com", password: "Password123!" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   function updateField(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,7 +34,7 @@ export default function Login() {
     return Object.keys(next).length === 0;
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault();
     setServerError("");
 
@@ -45,48 +42,32 @@ export default function Login() {
 
     setLoading(true);
 
-    try {
-      const response = await fetch(`${API_URL}/admin/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(form),
-      });
-
-      const data = await response.json();
-      console.log(data);
-      
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to sign in.");
-      }
-
-      // Prefer a secure HttpOnly cookie set by the backend.
-      // If your API returns a bearer token instead, adapt this
-      // section to your backend's documented authentication contract.
-      if (data.token) {
-        const storage = remember ? localStorage : sessionStorage;
-        storage.setItem("adminToken", data.token);
-      }
-    console.log("Login successfully completed")
-      navigate("/dashboard/*", { replace: true });
-    } catch (error) {
-      setServerError(
-        error.message || "Unable to connect to the server."
+    // Mock login authentication for client-side demo
+    setTimeout(() => {
+      localStorage.setItem("adminToken", "demo-token-" + Date.now());
+      localStorage.setItem(
+        "adminUser",
+        JSON.stringify({ email: form.email, name: "Store Administrator" })
       );
-    } finally {
       setLoading(false);
-    }
+      navigate("/admin/dashboard", { replace: true });
+    }, 400);
+  }
+
+  function fillDemo() {
+    setForm({ email: "admin@empirestore.com", password: "Password123!" });
+    setErrors({});
+    setServerError("");
   }
 
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Enter your admin credentials to access your store."
+      subtitle="Enter your admin credentials to access your store workspace."
       footer={
         <p>
           Don't have an admin account?{" "}
-          <Link to="/register" className="auth-link">
+          <Link to="/admin/register" className="auth-link">
             Create account
           </Link>
         </p>
@@ -105,7 +86,7 @@ export default function Login() {
             id="email"
             name="email"
             type="email"
-            placeholder="admin@yourstore.com"
+            placeholder="admin@empirestore.com"
             autoComplete="email"
             value={form.email}
             onChange={updateField}
@@ -137,9 +118,13 @@ export default function Login() {
             <span>Remember me</span>
           </label>
 
-          <Link to="/forgot-password" className="auth-link">
-            Forgot password?
-          </Link>
+          <button
+            type="button"
+            onClick={fillDemo}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+          >
+            <Sparkles size={13} /> Fill demo login
+          </button>
         </div>
 
         <button
@@ -161,7 +146,7 @@ export default function Login() {
         </button>
 
         <p className="auth-security-note">
-          Your account is protected by secure authentication.
+          Your account is secured with local administrator session protection.
         </p>
       </form>
     </AuthLayout>
