@@ -72,13 +72,39 @@ export default function Inventory() {
     if (!adjustItem) return;
     try {
       const updatedQty = Number(adjustQty);
-      if (adjustItem._id && /^[0-9a-fA-F]{24}$/.test(adjustItem._id)) {
-        await updateInventory(adjustItem._id, { available: updatedQty, onHand: updatedQty });
+      if (isNaN(updatedQty) || updatedQty < 0) {
+        setFeedback({ type: "error", text: "Quantity must be a non-negative number" });
+        return;
       }
+
+      const res = await updateInventory(adjustItem._id, {
+        onHand: updatedQty,
+        available: updatedQty,
+      });
+
+      const updated = res?.inventory;
+
       setItems((prev) =>
-        prev.map((it) => (it._id === adjustItem._id ? { ...it, available: updatedQty, onHand: updatedQty } : it))
+        prev.map((it) =>
+          it._id === adjustItem._id
+            ? {
+                ...it,
+                ...updated,
+                product: updated?.product || it.product,
+                available: updated?.available ?? updatedQty,
+                onHand: updated?.onHand ?? updatedQty,
+              }
+            : it
+        )
       );
-      setFeedback({ type: "success", text: `Stock updated for SKU ${adjustItem.sku}` });
+
+      const label =
+        adjustItem.sku ||
+        adjustItem.product?.variants?.[0]?.sku ||
+        adjustItem.product?.title ||
+        "Item";
+
+      setFeedback({ type: "success", text: `Stock updated for ${label}` });
       setAdjustItem(null);
     } catch (err) {
       setFeedback({ type: "error", text: err.message || "Failed to update stock" });
@@ -99,6 +125,7 @@ export default function Inventory() {
       const payload = {
         product: newItem.productId,
         variantId: defaultVariantId || undefined,
+        sku: newItem.sku?.trim() || selectedProduct?.variants?.[0]?.sku || "",
         locationName: newItem.locationName || "Main Warehouse",
         onHand: Number(newItem.onHand) || 0,
         committed: 0,
@@ -108,7 +135,7 @@ export default function Inventory() {
 
       const res = await addInventory(payload);
       const created = res?.inventory || payload;
-      setItems((prev) => [created, ...prev]);
+      setItems((prev) => [created, ...prev.filter((it) => it._id !== created._id)]);
       setIsAdding(false);
       setFeedback({ type: "success", text: "Inventory record added successfully" });
       setNewItem({
@@ -146,7 +173,7 @@ export default function Inventory() {
     const q = search.toLowerCase();
     return items.filter((it) => {
       const title = it.product?.title || it.productName || "";
-      const sku = it.sku || "";
+      const sku = it.sku || it.product?.variants?.[0]?.sku || "";
       return title.toLowerCase().includes(q) || sku.toLowerCase().includes(q);
     });
   }, [items, search]);
@@ -266,7 +293,9 @@ export default function Inventory() {
                   <td className="p-4 font-semibold text-slate-900">
                     {it.product?.title || it.productName || "Product"}
                   </td>
-                  <td className="p-4 font-mono text-xs text-slate-600">{it.sku || "—"}</td>
+                  <td className="p-4 font-mono text-xs text-slate-600">
+                    {it.sku || it.product?.variants?.[0]?.sku || "—"}
+                  </td>
                   <td className="p-4 text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <Warehouse size={12} /> {it.locationName || "Main Warehouse"}
@@ -317,7 +346,7 @@ export default function Inventory() {
               <button type="button" onClick={() => setAdjustItem(null)}><X size={18} className="text-slate-400" /></button>
             </div>
             <p className="text-xs text-slate-500">
-              SKU: <strong>{adjustItem.sku}</strong> ({adjustItem.product?.title || "Item"})
+              SKU: <strong>{adjustItem.sku || adjustItem.product?.variants?.[0]?.sku || "—"}</strong> ({adjustItem.product?.title || "Item"})
             </p>
             <div>
               <label className="text-xs font-semibold text-slate-700">Available Stock</label>
