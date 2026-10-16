@@ -1,5 +1,7 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes("localhost:3000")
+    ? import.meta.env.VITE_API_URL
+    : "/api";
 
 export const BACKEND_URL =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
@@ -14,21 +16,25 @@ export const BACKEND_URL =
  */
 export function getImageUrl(path) {
   if (!path) return "";
+  const raw = typeof path === "object" ? (path.url || path.src || "") : path;
+  if (!raw || typeof raw !== "string" || !raw.trim()) return "";
+  const str = raw.trim();
+
   if (
-    path.startsWith("http://") ||
-    path.startsWith("https://") ||
-    path.startsWith("blob:") ||
-    path.startsWith("data:")
+    str.startsWith("http://") ||
+    str.startsWith("https://") ||
+    str.startsWith("blob:") ||
+    str.startsWith("data:")
   ) {
-    return path;
+    return str;
   }
-  if (path.startsWith("/uploads/")) {
-    return `${BACKEND_URL}${path}`;
+  if (str.startsWith("/uploads/")) {
+    return `${BACKEND_URL}${str}`;
   }
-  if (path.startsWith("uploads/")) {
-    return `${BACKEND_URL}/${path}`;
+  if (str.startsWith("uploads/")) {
+    return `${BACKEND_URL}/${str}`;
   }
-  return `${BACKEND_URL}/uploads/${path}`;
+  return `${BACKEND_URL}/uploads/${str}`;
 }
 
 /**

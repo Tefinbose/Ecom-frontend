@@ -7,7 +7,7 @@ import PasswordInput from "../../components/auth/PasswordInput";
 export default function Login() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ email: "admin@empirestore.com", password: "Password123!" });
+  const [form, setForm] = useState({ email: "admin@shopify.com", password: "admin@123" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,7 +34,7 @@ export default function Login() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setServerError("");
 
@@ -42,20 +42,39 @@ export default function Login() {
 
     setLoading(true);
 
-    // Mock login authentication for client-side demo
-    setTimeout(() => {
-      localStorage.setItem("adminToken", "demo-token-" + Date.now());
-      localStorage.setItem(
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.token) {
+        throw new Error(data?.message || "Invalid credentials. Please verify your email and password.");
+      }
+
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem("adminToken", data.token);
+      storage.setItem(
         "adminUser",
-        JSON.stringify({ email: form.email, name: "Store Administrator" })
+        JSON.stringify(data.adminData || { email: form.email, name: "Store Administrator" })
       );
-      setLoading(false);
+
       navigate("/admin/dashboard", { replace: true });
-    }, 400);
+    } catch (err) {
+      setServerError(err.message || "Failed to sign in. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function fillDemo() {
-    setForm({ email: "admin@empirestore.com", password: "Password123!" });
+    setForm({ email: "admin@shopify.com", password: "admin@123" });
     setErrors({});
     setServerError("");
   }
